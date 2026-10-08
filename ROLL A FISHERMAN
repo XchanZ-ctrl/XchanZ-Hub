@@ -1,0 +1,72 @@
+if _G.RFF_Off then _G.RFF_Off() return end
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LP = Players.LocalPlayer
+
+local running = true
+_G.RFF_Off = function()
+    running = false
+    pcall(function() _G.RFF_Gui:Destroy() end)
+    _G.RFF_Off = nil
+end
+
+-- GUI Setup
+pcall(function()
+    for _, v in ipairs(LP:WaitForChild("PlayerGui"):GetChildren()) do
+        if v.Name == "RollFishermanGUI" then v:Destroy() end
+    end
+end)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "RollFishermanGUI"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = LP:WaitForChild("PlayerGui")
+_G.RFF_Gui = gui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(200, 120)
+frame.Position = UDim2.new(0, 12, 0, 60)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+
+local rollBtn = Instance.new("TextButton")
+rollBtn.Size = UDim2.new(1, -16, 0, 36)
+rollBtn.Position = UDim2.new(0, 8, 0, 40)
+rollBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+rollBtn.TextColor3 = Color3.new(1, 1, 1)
+rollBtn.Font = Enum.Font.GothamBold
+rollBtn.TextSize = 13
+rollBtn.Text = "Auto Roll: OFF"
+rollBtn.Parent = frame
+Instance.new("UICorner", rollBtn).CornerRadius = UDim.new(0, 6)
+
+local ROLL_ON = false
+rollBtn.MouseButton1Click:Connect(function()
+    ROLL_ON = not ROLL_ON
+    rollBtn.Text = "Auto Roll: " .. (ROLL_ON and "ON" or "OFF")
+    rollBtn.BackgroundColor3 = ROLL_ON and Color3.fromRGB(40, 120, 60) or Color3.fromRGB(45, 45, 55)
+end)
+
+-- Auto Roll Loop targeting the ProximityPrompt
+task.spawn(function()
+    while running do
+        task.wait(0.25)
+        if ROLL_ON then
+            pcall(function()
+                for _, v in ipairs(Workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        local parentName = v.Parent and v.Parent.Name:lower() or ""
+                        if parentName:find("roll") or v.ActionText:lower():find("roll") or v.ObjectText:lower():find("roll") then
+                            fireproximityprompt(v)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
